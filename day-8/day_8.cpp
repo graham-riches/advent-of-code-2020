@@ -197,12 +197,13 @@ int main( int argc, char *argv[] )
    std::cout << "value in the accumulator before executing an instruction twice: " << game.accumulator << std::endl;
 
    /* part two solution */      
-   /* create a new vector of instructions that is a clone of the existing instruction set */
-   std::vector<Instruction> instructions = game.instructions;
-
-   /* swap every nop to jmp, and vice versa */
-   const std::map <Instructions, Instructions> remap{ {Instructions::jmp, Instructions::nop}, {Instructions::nop, Instructions::jmp}, {Instructions::acc, Instructions::acc} };
-   std::transform( instructions.begin(), instructions.end(), instructions.begin(), 
+   /* create a new vector of instructions that is a clone of the existing instruction set but with all nop/jmp swapped */
+   const std::map <Instructions, Instructions> remap{ {Instructions::jmp, Instructions::nop}, 
+                                                      {Instructions::nop, Instructions::jmp}, 
+                                                      {Instructions::acc, Instructions::acc} };
+   
+   std::vector<Instruction> instructions;      
+   std::transform( game.instructions.cbegin(), game.instructions.cend(), std::back_inserter(instructions), 
       [remap](Instruction &i)
       {
          i.instruction = remap.at(i.instruction);
@@ -217,17 +218,17 @@ int main( int argc, char *argv[] )
       instructions[count] = i;
 
       Emulator new_emulator{instructions};
-
       RunStatus status = ( instructions[count].instruction == Instructions::acc ) ? RunStatus::infinite_loop : new_emulator.run();
       count++;
       return std::pair<RunStatus, int>{status, new_emulator.accumulator};
    };
 
-
+   /* run each iteration and store the status + accumulator value in a std::pair */
    std::vector<std::pair<RunStatus, int>> run_status;
    std::transform( instructions.begin(), instructions.end(), std::back_inserter(run_status), run_simulation );
+
+   /* fetch the successful swap and output the value */
    auto iterator = std::find_if(run_status.cbegin(), run_status.cend(), [](const auto &status){ return status.first == RunStatus::terminated; });   
    std::cout << "value in accumulator on successful exit: " << iterator->second << std::endl;
-
    return 0;
 }
