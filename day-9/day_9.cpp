@@ -11,12 +11,8 @@
 #include <iostream>
 #include <numeric>
 #include <ostream>
-#include <regex>
 #include <string>
 #include <vector>
-#include <functional>
-#include <set>
-#include <map>
 #include <cstdint>
 
 
@@ -103,18 +99,18 @@ std::vector<bool> process_from_preamble(std::vector<int64_t>& values, int64_t pr
 */
 int main( int argc, char *argv[] )
 {     
+   /* read in the data */
    std::ifstream stream{ argv[1] };
    std::string line;
    std::vector<int64_t> values;
    while (std::getline(stream, line))
    {
-      values.push_back( std::stoll(line) );
+      values.push_back( std::stoll(line) ); /* convert to int64 to not overflow */
    }
 
    /* part one solution */
    auto sum_in_previous = process_from_preamble( values, 25 );
-   auto iterator = std::find( sum_in_previous.cbegin(), sum_in_previous.cend(), false );
-   auto index = iterator - sum_in_previous.cbegin();
+   auto index = std::find( sum_in_previous.cbegin(), sum_in_previous.cend(), false ) - sum_in_previous.cbegin();   
    int invalid_number = values[index];
    std::cout << "First value not contained in previous preamble " << invalid_number << std::endl;
 
