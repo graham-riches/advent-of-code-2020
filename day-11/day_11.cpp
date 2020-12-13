@@ -174,6 +174,29 @@ struct Seats
    }
 
    /**
+    * @brief apply the rules to a vector of visible seats at a location
+    * @param starting_status the initial value for a location
+    * @param seats the vector of seats
+    * @param empty_threshold how many occupied seats nearby to trigger an emptying action
+    * @return 
+   */
+   LocationStatus apply_rules(LocationStatus starting_status, std::vector<LocationStatus>& seats, int empty_threshold)
+   {
+      auto count = std::count_if(seats.cbegin(), seats.cend(), [](auto& n) { return n == LocationStatus::occupied; });
+
+      LocationStatus new_status{ starting_status };
+      if ((count >= empty_threshold) && (starting_status == LocationStatus::occupied))
+      {
+         new_status = LocationStatus::empty;
+      }
+      else if ((count == 0) && (starting_status == LocationStatus::empty))
+      {
+         new_status = LocationStatus::occupied;
+      }
+      return new_status;
+   }
+
+   /**
     * @brief apply the simulation rules at a location and return the new status
     * @param row the current row
     * @param column the current column
@@ -182,20 +205,9 @@ struct Seats
    LocationStatus rules_part_one(int row, int column)
    {
       auto current_status = this->locations[row][column];
-
       auto neighbours = this->get_neighbours(row, column);
-      auto count = std::count_if(neighbours.cbegin(), neighbours.cend(), [](auto& n) { return n == LocationStatus::occupied; });
       
-      LocationStatus new_status{current_status};
-      if ((count >= 4) && (current_status == LocationStatus::occupied))
-      {
-         new_status = LocationStatus::empty;
-      }
-      else if ((count == 0) && (current_status == LocationStatus::empty))
-      {
-         new_status = LocationStatus::occupied;
-      }
-      return new_status;
+      return this->apply_rules(current_status, neighbours, 4);
    }
 
    /**
@@ -203,25 +215,12 @@ struct Seats
     * @param row current row
     * @param column current column
     * @return new status
-    * @note this function and the previous one are incredibly similar and could be broken out into one
    */
    LocationStatus rules_part_two(int row, int column)
    {
       auto current_status = this->locations[row][column];
-
       auto visible_seats = this->count_in_all_directions(row, column);
-      auto count = std::count_if(visible_seats.cbegin(), visible_seats.cend(), [](auto& n) { return n == LocationStatus::occupied; });
-      
-      LocationStatus new_status{ current_status };
-      if ((count >= 5) && (current_status == LocationStatus::occupied))
-      {
-         new_status = LocationStatus::empty;
-      }
-      else if ((count == 0) && (current_status == LocationStatus::empty))
-      {
-         new_status = LocationStatus::occupied;
-      }
-      return new_status;      
+      return this->apply_rules(current_status, visible_seats, 5);
    }
 
    /**
