@@ -1,6 +1,6 @@
-/*! \file day_7.cpp
+/*! \file day_9.cpp
 *
-*  \brief day-7 advent of code problem
+*  \brief day-9 advent of code problem
 *
 *  \author Graham Riches
 */
