@@ -12,7 +12,7 @@ set(CMAKE_C_EXTENSIONS OFF)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_CXX_EXTENSIONS ON)
 
 if(CMAKE_COMPILER_IS_GNUCXX)
 	message(STATUS "GCC Compiler detected, adding flags")
@@ -22,7 +22,7 @@ endif(CMAKE_COMPILER_IS_GNUCXX)
 set(MSVC_LINK_FLAGS "/DEBUG")
 SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} ${MSVC_LINK_FLAGS}")
 
-
+add_subdirectory(lib/range-v3)
 add_subdirectory(day-1)
 add_subdirectory(day-2)
 add_subdirectory(day-3)
