@@ -87,6 +87,17 @@ public:
    {
       return this->name == field.name;
    }
+
+   /**
+    * @brief check if a field has a specific name
+    * @param name the name to check 
+    * @return 
+   */
+   bool name_contains(const std::string& name)
+   {
+      auto iterator = this->name.find(name);
+      return ( iterator != std::string::npos);
+   }
 };
 
 
@@ -258,21 +269,30 @@ int main( int argc, char *argv[] )
    /* get the sorted order */
    std::vector<int> sorted_order(columns.size());
    std::transform(columns_with_data.begin(), columns_with_data.end(), sorted_order.begin(), [](column_pair pair){return pair.second;} );
-
-   std::vector<Field> set = columns_with_data[0].first;
+     
+   /* gross loops for this - can definitely use an STL algorithm here*/
+   std::vector<std::pair<Field,int>> set{std::pair{columns_with_data[0].first[0], columns_with_data[0].second}};
    for (auto column_entry : columns_with_data)
    {
       for (auto field : column_entry.first)
       {
-         auto match = std::find_if(set.begin(), set.end(), [field](Field set_in_field){ return !set_in_field.is_equal(field); } );
+         auto is_in_set = std::count_if(set.begin(), set.end(), [field](auto pair){ return pair.first.is_equal(field); } );
          
-         if (match != set.end())
+         if (is_in_set == 0)
          {
-            set.push_back(field);
+            set.push_back(std::pair{field, column_entry.second});
          }         
       }      
    }
 
+   auto departure_multiple = std::transform_reduce( set.begin(), set.end(), 1LL, std::multiplies<long long>(), 
+      [ticket](auto pair)
+      {
+         return ( pair.first.name_contains("departure") ) ? ticket[pair.second] : 1;
+      }
+      );
+
+   std::cout << "Multiple of all things departure is: " << departure_multiple << "\n";
    
    return 0;
 }
