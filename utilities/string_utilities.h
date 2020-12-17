@@ -6,6 +6,8 @@
 *  \author Graham Riches
 */
 
+#pragma once
+
 /********************************** Includes *******************************************/
 #include <fstream>
 #include <ostream>
@@ -22,7 +24,7 @@
  * @param filename
  * @return
 */
-std::ifstream open_file(std::string&& filename)
+std::ifstream open_file(const std::string& filename)
 {
    return std::ifstream{ filename };
 }
