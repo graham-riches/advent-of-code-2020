@@ -7,10 +7,6 @@ cmake_minimum_required(VERSION 3.15.3)
 project(advent_of_code)
 
 
-set(CMAKE_TRY_COMPILE_TARGET_TYPE "STATIC_LIBRARY")
-set(CMAKE_SYSTEM_NAME Generic)
-
-
 # set the language versions
 enable_language(C CXX ASM)
 set(CMAKE_C_STANDARD 11)
@@ -22,8 +18,11 @@ set(CMAKE_CXX_EXTENSIONS ON)
 
 
 # set MSVC compiler flags and linker flags
+set(CMAKE_CXX_FLAGS_RELEASE "/MT")
+set(CMAKE_CXX_FLAGS_DEBUG "/MTd /Zi /Ob0 /Od /RTC1")
 set(MSVC_LINK_FLAGS "/DEBUG")
-SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} ${MSVC_LINK_FLAGS}")
+set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} ${MSVC_LINK_FLAGS}")
+
 
 
 # find any packages
@@ -52,3 +51,4 @@ add_subdirectory(day-13)
 add_subdirectory(day-14)
 add_subdirectory(day-16)
 add_subdirectory(day-17)
+add_subdirectory(day-18)

@@ -1,6 +1,6 @@
-set(BINARY day-17)
+set(BINARY day-18)
 
-set(SOURCES day_17.cpp)
+set(SOURCES day_18.cpp)
 
 add_executable(${BINARY} ${SOURCES})
 
