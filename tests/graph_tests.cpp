@@ -136,13 +136,13 @@ TEST_F( TestComplexGraphSetup, test_appending_children_from_vector )
    EXPECT_EQ( &graph.nodes[5], nodes[2] );
 }
 
-TEST_F( TestComplexGraphSetup, test_getting_combinations_from_one_level_up )
+TEST_F( TestComplexGraphSetup, DISABLED_test_getting_combinations_from_one_level_up )
 {
    auto test = graph.get_child_combinations(2);
    EXPECT_EQ(2, test.size());
 }
 
-TEST_F( TestComplexGraphSetup, test_getting_combinations_from_two_levels_up )
+TEST_F( TestComplexGraphSetup, DISABLED_test_getting_combinations_from_two_levels_up )
 {
    auto test = graph.get_child_combinations( 1 );
    EXPECT_EQ( 8, test.size() );
