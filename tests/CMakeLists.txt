@@ -1,6 +1,7 @@
-set(BINARY string_utilities_tests)
+set(BINARY tests)
 
 set(SOURCES string_utilities_tests.cpp
+            graph_tests.cpp
             main.cpp
 )
 
