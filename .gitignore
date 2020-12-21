@@ -36,3 +36,4 @@ build**
 
 # Pycharm Files
 *.idea*
+*venv*
