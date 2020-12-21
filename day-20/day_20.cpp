@@ -83,8 +83,8 @@ Grid<int> tile_string_to_grid( std::string& tile_string )
 */
 Match check_all_matching_edges( Grid<int> a, Grid<int> b )
 {
-   auto a_edges = a.get_edges(Permutation::original);
-   auto b_edges = b.get_edges(Permutation::original);
+   auto a_edges = a.get_edges();
+   auto b_edges = b.get_edges();
    Match match{a.get_id(), b.get_id()};
 
    for ( int a_edge = Edges::top; a_edge < a_edges.size(); a_edge++ )
@@ -145,8 +145,6 @@ int main( int64_t argc, char *argv[] )
    /* remove any non-matches */
    matches.erase(std::remove_if(matches.begin(), matches.end(), [](auto match){ return ( match.match == false ); } ), matches.end());
 
-
-
    /* count the occurence of each tile in the matched set -> this determines it's possible locations
       2 matches - corner, 3 matches - edge, 4 matches - interior
    */
@@ -174,7 +172,6 @@ int main( int64_t argc, char *argv[] )
 
 
 
-
    /*------------------------------ Part Two Solution ------------------------------*/
    /* need to assemble the puzzle from the corners out - this is going to be pretty damn rough to do */
    auto first_corner = std::find_if( id_match_map.cbegin(), id_match_map.cend(), [](auto match_pair){ return (match_pair.second == 2); } );
@@ -182,9 +179,7 @@ int main( int64_t argc, char *argv[] )
    ConstructedImage image{ dimension, dimension, matches, id_match_map };
    image.place_edges_and_corners( first_corner->first );
    image.place_interior_pieces();
-
-
-
+      
    /* print out the total run time */
    auto end = std::chrono::steady_clock::now();
    std::cout << "Run time: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " milliseconds \n";

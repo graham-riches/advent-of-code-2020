@@ -12,21 +12,9 @@
 #include <algorithm>
 #include <numeric>
 #include <vector>
+#include <array>
+#include <functional>
 
-/**
- * @brief enumeration of all possible orientations of a tile
-*/
-enum class Permutation : unsigned
-{
-   original,
-   rotate_90,
-   rotate_180,
-   rotate_270,
-   mirror_x,
-   mirror_x_rotate_90,
-   mirror_y,
-   mirror_y_rotate_90
-};
 
 /**
  * @brief enumeration of edge indices
@@ -45,6 +33,12 @@ template <typename T>
 class Grid
 {
 public:
+   std::array<std::function<void( void )>, 7> transformations{ std::bind( &Grid:: rotate, this), std::bind( &Grid::rotate, this ),
+                                                               std::bind( &Grid::rotate, this ), std::bind( &Grid::reflect, this ), 
+                                                               std::bind( &Grid::rotate, this ), std::bind( &Grid::rotate, this ), 
+                                                               std::bind( &Grid::rotate, this ) };
+
+
    /**
     * @brief construct a grid object with a specific size
     * @param id identifier for the grid object
@@ -96,7 +90,7 @@ public:
     * @brief return a vector of all edge vectors
     * @return vector of vector of edges
    */
-   std::vector<std::vector<T>> get_edges( Permutation permutation )
+   std::vector<std::vector<T>> get_edges( )
    {
       std::vector<std::vector<T>> edges;  //!< container to store all the edges
 
@@ -111,60 +105,32 @@ public:
       edges.push_back( right_edge );    //!< right edge
       edges.push_back( tiles.back() );  //!< bottom edge
       edges.push_back( left_edge );     //!< left edge
-
-      /* we now have the default edge permutation, the rest are trivial standard algorithm operations */
-      switch (permutation)
-      {
-      case Permutation::original:
-         break;
-
-      case Permutation::rotate_90:
-         std::rotate(edges.rbegin(), edges.rbegin() + 1, edges.rend());
-         break;
-
-      case Permutation::rotate_180:
-         std::rotate( edges.rbegin(), edges.rbegin() + 2, edges.rend() );
-         break;
-
-      case Permutation::rotate_270:
-         std::rotate( edges.rbegin(), edges.rbegin() + 3, edges.rend() );
-         break;
-
-      case Permutation::mirror_x:
-         /* swap the top and bottom values, and reverse the left and right sides */
-         std::iter_swap(edges.begin(), edges.begin() + 2);
-         std::reverse(edges[Edges::left].begin(), edges[Edges::left].end());
-         std::reverse(edges[Edges::right].begin(), edges[Edges::right].end());
-         break;
-
-      case Permutation::mirror_x_rotate_90:
-         /* mirror, as above, then rotate */
-         std::iter_swap(edges.begin(), edges.begin() + 2);
-         std::reverse(edges[Edges::left].begin(), edges[Edges::left].end());
-         std::reverse(edges[Edges::right].begin(), edges[Edges::right].end());
-         std::rotate( edges.rbegin(), edges.rbegin() + 1, edges.rend() );
-         break;
-
-      case Permutation::mirror_y:
-         /* swap the left and right sides and reverse the top and bottom */
-         std::iter_swap(edges.begin() + 1, edges.begin() + 3);
-         std::reverse(edges[Edges::top].begin(), edges[Edges::top].end());
-         std::reverse(edges[Edges::bottom].begin(), edges[Edges::bottom].end());
-         break;
-
-      case Permutation::mirror_y_rotate_90:
-         /* mirror as above, then rotate 90 degrees */
-         std::iter_swap(edges.begin() + 1, edges.begin() + 3);
-         std::reverse(edges[Edges::top].begin(), edges[Edges::top].end());
-         std::reverse(edges[Edges::bottom].begin(), edges[Edges::bottom].end());
-         std::rotate( edges.rbegin(), edges.rbegin() + 1, edges.rend() );
-         break;
-
-      default:
-         break;
-      }
-
       return edges;
+   }
+
+   /**
+    * @brief apply a rotation to the tiles (default left)
+   */
+   void rotate()
+   {
+      std::vector<std::vector<T>> copy = tiles;
+      for (int i = 0; i < x_size; i++)
+      {
+         for (int j = 0; j < y_size; j++)
+         {
+            tiles[j][i] = copy[i][j];
+         }
+      }
+   }
+
+   /**
+    * @brief apply a reflection to the data (default Y)
+    * @tparam T 
+   */
+   void reflect()
+   {
+      std::for_each(tiles.begin(), tiles.end(), 
+         [](std::vector<T>& row){std::reverse(row.begin(), row.end());} );
    }
 
 
@@ -174,5 +140,7 @@ private:
    size_t x_size{0};
    size_t y_size{0};
    std::vector<std::vector<T>> tiles;
+   
+
 
 };

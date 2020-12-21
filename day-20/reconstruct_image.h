@@ -62,30 +62,33 @@ struct Match
 */
 class ConstructedImage
 {
-   using match_pair = std::pair<int, Permutation>;
-
 public:
    ConstructedImage( size_t x, size_t y, std::vector<Match> matches, std::map<int, int> types )
-      : x_size( x ), y_size( y ), image( x, std::vector<match_pair>( y ) ), matches( matches ), tile_type( types )
+      : x_size( x ), y_size( y ), image( x, std::vector<int>( y ) ), matches( matches ), tile_type( types )
    {};
 
    /**
     * @brief place all the tile boundaries by marching around the perimeter. The logic is a bit nasty to handle this
     *        and could probably be simplified somewhat. That is currently future optimization as just getting it 
     *        working is the main priority at the moment.
-    * @param first_corner_id
+    * @param first_corner_id id of the first corner to place
    */
    void place_edges_and_corners( int first_corner_id )
    {
       /* Place the initial tile in the top left corner and store it in the working set */
-      stored_tiles.insert( first_corner_id );
-      image[0][0].first = first_corner_id;
+      stored_tiles.insert( first_corner_id );      
+      image[0][0] = first_corner_id;
+
+      /* create a map between the traversal direction and which edge we need to match */
+      std::map<Edges, Edges> direction_to_match_edge{ {Edges::top, Edges::left},     {Edges::right, Edges::top}, 
+                                                      {Edges::bottom, Edges::right}, {Edges::left, Edges::bottom} };
 
       /* initialize the iterator locations, and some other control variables */
       int row{ 0 };
       int column{ 0 };
       int current_tile_id{ first_corner_id };
-      Edges current_edge{ Edges::top };
+      int last_tile_id{first_corner_id};
+      Edges current_edge{ Edges::top };      
 
       /* fairly heinous while loop to place all the tiles */
       while (true)
@@ -107,7 +110,7 @@ public:
          current_tile_id = get_next_id( current_tile_id, edges, corners );
          
          /* check for completion */
-         if ( current_tile_id == 0 )
+         if ( (current_tile_id == 0) || (stored_tiles.contains(current_tile_id)) )
          {
             break;
          }
@@ -115,21 +118,22 @@ public:
          /* add the current id to the appropriate spot in the grid */
          switch (current_edge)
          {
-         case Edges::top:    image[row][++column].first = current_tile_id; break;
-         case Edges::right:  image[++row][column].first = current_tile_id; break;
-         case Edges::bottom: image[row][--column].first = current_tile_id; break;
-         case Edges::left:   image[--row][column].first = current_tile_id; break;
+         case Edges::top:    image[row][++column] = current_tile_id; break;
+         case Edges::right:  image[++row][column] = current_tile_id; break;
+         case Edges::bottom: image[row][--column] = current_tile_id; break;
+         case Edges::left:   image[--row][column] = current_tile_id; break;
          default: break;
          }
 
-         /* turn the corner if the last tile placed was a corner */
+         /* turn the corner and properly rotate the tile if the last tile placed was a corner */
          if ( static_cast<TileType>(tile_type.at(current_tile_id)) == TileType::corner )
          {            
-            current_edge = static_cast<Edges>(static_cast<int>(current_edge) + 1);
+            current_edge = static_cast<Edges>(static_cast<int>(current_edge) + 1);            
          }
 
          /* insert the value into the set */
          stored_tiles.insert( current_tile_id );
+         last_tile_id = current_tile_id;
       }
    }
 
@@ -154,8 +158,8 @@ public:
          for (int column = 1; column < y_size - 1; column++)
          {
             /* look up where the tiles fits : match upper and left neighbour */
-            auto left_node_children = get_children( image[row][column - 1LL].first );
-            auto upper_node_children = get_children( image[row - 1LL][column].first );
+            auto left_node_children = get_children( image[row][column - 1LL] );
+            auto upper_node_children = get_children( image[row - 1LL][column] );
             
             /* store all the possible neighbours in a unique set */
             std::set<int> nodes_matching_left = get_child_set( left_node_children );
@@ -171,77 +175,45 @@ public:
             std::set_intersection( intersection.begin(), intersection.end(),
                                    interior_nodes.begin(), interior_nodes.end(), std::back_inserter( match_set ) );
 
-            if (match_set.size() == 1)
-            {
-               image[row][column].first = match_set[0];
-               stored_tiles.insert(match_set[0]);
-               interior_nodes.erase(std::remove(interior_nodes.begin(), interior_nodes.end(), match_set[0]), interior_nodes.end());
-            }
-            else
-            {
-               std::cout << "ahhhh I suck" << std::endl;
-            }
+            image[row][column] = match_set[0];
+            stored_tiles.insert(match_set[0]);
+            interior_nodes.erase(std::remove(interior_nodes.begin(), interior_nodes.end(), match_set[0]), interior_nodes.end());
          }
       }
    }
 
    /**
-    * @brief get the orientation for each tile in a matched set by matching it's neighbours
-    */
-   void align_tiles(void)
-   {
-      for (int row = 0; row < x_size; row++)
-      {
-         for (int column = 0; column < y_size; column++)
-         {
-            /* each tile can be found by checking it's neighbour tiles */
-            auto neighbours = get_neighbours( row, column );
-
-
-            /* need to get the neighbour matches from the raw match data */
-            
-         }
-      }
-   }
-
-   /**
-    * @brief Get the neighbour tiles of a location
-    * 
+    * @brief Get the neighbour indices of a location
+    *
     * @param row row index
     * @param column index
-    * @retval std::vector<std::pair<int, int>> 
+    * @retval std::vector<std::pair<int, int>>
     */
-   std::vector<std::pair<int, int>> get_neighbours(int row, int column)
+   std::vector<std::pair<int, int>> get_neighbours( int row, int column )
    {
       /* handle the edge and corner cases */
-      int row_start    = ( row == 0 )             ? 0      : row - 1;
-      int row_end      = ( row == x_size - 1 )    ? row    : row + 1;
-      int column_start = ( column == 0 )          ? 0      : column - 1;
-      int column_end   = ( column == y_size - 1 ) ? column : column + 1;
+      int row_start    = (row == 0)             ? 0      : row - 1;
+      int row_end      = (row == x_size - 1)    ? row    : row + 1;
+      int column_start = (column == 0)          ? 0      : column - 1;
+      int column_end   = (column == y_size - 1) ? column : column + 1;
 
       /* pack the neighbours into a vector */
-      std::vector<std::pair<int,int>> neighbours;
-      for ( int i = row_start; i <= row_end; i++ )
+      std::vector<std::pair<int, int>> neighbours;
+      for (int i = row_start; i <= row_end; i++)
       {
-         for ( int j = column_start; k <= column_end; j++ )
+         for (int j = column_start; j <= column_end; j++)
          {
-            if ( (i != row) || (j != column) )
+            if ( (i == row) && (j != column))
             {
-               neghbours.push_back( std::pair{i, j} );
+               neighbours.push_back( std::pair{ i, j } );
+            }
+            else if ((j == column) && (i != row))
+            {
+               neighbours.push_back( std::pair{ i, j } );
             }
          }
-      }      
+      }
       return neighbours;
-   }
-
-   /**
-    * @brief Get the tile orientation object
-    * 
-    * @param neighbours 
-    */
-   void get_tile_orientation( std::vector<std::pair<int, int>> neighbours )
-   {
-
    }
 
    /**
@@ -275,7 +247,7 @@ public:
       auto corner_id1 = (corners.size() == 2) ? corners[1].get_match_partner( current_id ) : 0;      
       auto edge_id0   = (edges.size() >= 1)   ? edges[0].get_match_partner( current_id ) : 0;
       auto edge_id1   = (edges.size() == 2)   ? edges[1].get_match_partner( current_id ) : 0;
-      auto edge_id    = (!stored_tiles.contains( edge_id0 )) ? edge_id0 : edge_id1;
+      auto edge_id    = (!stored_tiles.contains( edge_id0 ))   ? edge_id0   : edge_id1;
       auto corner_id  = (!stored_tiles.contains( corner_id0 )) ? corner_id0 : corner_id1;
       current_id = (edge_id != 0) ? edge_id : corner_id;
       return current_id;
@@ -297,12 +269,66 @@ public:
       return nodes;
    }
 
-private:
-   bool is_complete{ false };
+   /**
+    * @brief assemble the final image by rotating every tile in place until the correct combination of tiles is found
+    * @param locations locations of each tile in the grid
+    * @param tiles raw tile data
+    * @return
+   */
+   std::vector<std::vector<int>> assemble_final_image( std::vector<Grid<int>> tiles )
+   {
+      /* copy each grid over to its final location */
+      std::vector<std::vector<Grid<int>>> grid(x_size, std::vector<Grid<int>>{y_size});
+
+      for (int row = 0; row < x_size; row++)
+      {
+         for (int column = 0; column < y_size; column++)
+         {
+            int id{image[row][column]};
+            auto tile = std::find_if(tiles.cbegin(), tiles.cend(), [id](auto grid){ return (grid.get_id() == id);} );
+            grid[row][column] = *tile;
+         }
+      }
+
+      for (int row = 0; row < x_size; row++)
+      {
+         for (int column = 0; column < y_size; column++)
+         {
+            /* get the neighbour tiles IDs */
+            auto neighbours = get_neighbours( row, column );
+            
+            /* handle corners, edges, and interior pieces separately */
+            switch (neighbours.size())
+            {
+               case 2:
+
+                  break;
+
+               case 3:
+
+                  break;
+
+               case 4:
+
+                  break;
+
+               default:
+                  break;
+            }
+         }
+      }
+      return std::vector<std::vector<int>>{};
+   }
+
+private:   
    size_t x_size;
    size_t y_size;
-   std::vector<std::vector<match_pair>> image;
+   std::vector<std::vector<int>> image;
    std::vector<Match> matches;
    std::map<int, int> tile_type;
    std::set<int> stored_tiles;
 };
+
+
+
+
