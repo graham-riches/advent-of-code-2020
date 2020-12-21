@@ -183,6 +183,64 @@ public:
             }
          }
       }
+   }
+
+   /**
+    * @brief get the orientation for each tile in a matched set by matching it's neighbours
+    */
+   void align_tiles(void)
+   {
+      for (int row = 0; row < x_size; row++)
+      {
+         for (int column = 0; column < y_size; column++)
+         {
+            /* each tile can be found by checking it's neighbour tiles */
+            auto neighbours = get_neighbours( row, column );
+
+
+            /* need to get the neighbour matches from the raw match data */
+            
+         }
+      }
+   }
+
+   /**
+    * @brief Get the neighbour tiles of a location
+    * 
+    * @param row row index
+    * @param column index
+    * @retval std::vector<std::pair<int, int>> 
+    */
+   std::vector<std::pair<int, int>> get_neighbours(int row, int column)
+   {
+      /* handle the edge and corner cases */
+      int row_start    = ( row == 0 )             ? 0      : row - 1;
+      int row_end      = ( row == x_size - 1 )    ? row    : row + 1;
+      int column_start = ( column == 0 )          ? 0      : column - 1;
+      int column_end   = ( column == y_size - 1 ) ? column : column + 1;
+
+      /* pack the neighbours into a vector */
+      std::vector<std::pair<int,int>> neighbours;
+      for ( int i = row_start; i <= row_end; i++ )
+      {
+         for ( int j = column_start; k <= column_end; j++ )
+         {
+            if ( (i != row) || (j != column) )
+            {
+               neghbours.push_back( std::pair{i, j} );
+            }
+         }
+      }      
+      return neighbours;
+   }
+
+   /**
+    * @brief Get the tile orientation object
+    * 
+    * @param neighbours 
+    */
+   void get_tile_orientation( std::vector<std::pair<int, int>> neighbours )
+   {
 
    }
 
