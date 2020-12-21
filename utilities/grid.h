@@ -13,22 +13,31 @@
 #include <numeric>
 #include <vector>
 
-
-enum class Rotation : unsigned
+/**
+ * @brief enumeration of all possible orientations of a tile
+*/
+enum class Permutation : unsigned
 {
-   degrees_90,
-   degrees_180,
-   degrees_270,
+   original,
+   rotate_90,
+   rotate_180,
+   rotate_270,
+   mirror_x,
+   mirror_x_rotate_90,
+   mirror_y,
+   mirror_y_rotate_90
 };
 
-
 /**
- * @brief enumeration of axes to handle mirroring operations
+ * @brief enumeration of edge indices
 */
-enum class Axis : unsigned
+enum Edges
 {
-   x_axis,
-   y_axis,
+   top,
+   right,
+   bottom,
+   left,
+   total_edges
 };
 
 
@@ -87,7 +96,7 @@ public:
     * @brief return a vector of all edge vectors
     * @return vector of vector of edges
    */
-   std::vector<std::vector<T>> get_edges()
+   std::vector<std::vector<T>> get_edges( Permutation permutation )
    {
       std::vector<std::vector<T>> edges;  //!< container to store all the edges
 
@@ -98,10 +107,63 @@ public:
       std::transform( tiles.begin(), tiles.end(), right_edge.begin(), []( std::vector<T> row ) { return row.back(); } );
 
       /* put all edges into the container in order */
-      edges.push_back( tiles[0] );     //!< top edge
-      edges.push_back( right_edge );   //!< right edge
-      edges.push_back( tiles.back() ); //!< bottom edge
-      edges.push_back( left_edge );    //!< left edge
+      edges.push_back( tiles.front() ); //!< top edge
+      edges.push_back( right_edge );    //!< right edge
+      edges.push_back( tiles.back() );  //!< bottom edge
+      edges.push_back( left_edge );     //!< left edge
+
+      /* we now have the default edge permutation, the rest are trivial standard algorithm operations */
+      switch (permutation)
+      {
+      case Permutation::original:
+         break;
+
+      case Permutation::rotate_90:
+         std::rotate(edges.rbegin(), edges.rbegin() + 1, edges.rend());
+         break;
+
+      case Permutation::rotate_180:
+         std::rotate( edges.rbegin(), edges.rbegin() + 2, edges.rend() );
+         break;
+
+      case Permutation::rotate_270:
+         std::rotate( edges.rbegin(), edges.rbegin() + 3, edges.rend() );
+         break;
+
+      case Permutation::mirror_x:
+         /* swap the top and bottom values, and reverse the left and right sides */
+         std::iter_swap(edges.begin(), edges.begin() + 2);
+         std::reverse(edges[Edges::left].begin(), edges[Edges::left].end());
+         std::reverse(edges[Edges::right].begin(), edges[Edges::right].end());
+         break;
+
+      case Permutation::mirror_x_rotate_90:
+         /* mirror, as above, then rotate */
+         std::iter_swap(edges.begin(), edges.begin() + 2);
+         std::reverse(edges[Edges::left].begin(), edges[Edges::left].end());
+         std::reverse(edges[Edges::right].begin(), edges[Edges::right].end());
+         std::rotate( edges.rbegin(), edges.rbegin() + 1, edges.rend() );
+         break;
+
+      case Permutation::mirror_y:
+         /* swap the left and right sides and reverse the top and bottom */
+         std::iter_swap(edges.begin() + 1, edges.begin() + 3);
+         std::reverse(edges[Edges::top].begin(), edges[Edges::top].end());
+         std::reverse(edges[Edges::bottom].begin(), edges[Edges::bottom].end());
+         break;
+
+      case Permutation::mirror_y_rotate_90:
+         /* mirror as above, then rotate 90 degrees */
+         std::iter_swap(edges.begin() + 1, edges.begin() + 3);
+         std::reverse(edges[Edges::top].begin(), edges[Edges::top].end());
+         std::reverse(edges[Edges::bottom].begin(), edges[Edges::bottom].end());
+         std::rotate( edges.rbegin(), edges.rbegin() + 1, edges.rend() );
+         break;
+
+      default:
+         break;
+      }
+
       return edges;
    }
 

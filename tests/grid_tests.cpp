@@ -39,7 +39,7 @@ TEST( grid_tests, test_getting_edges )
    std::vector<int> row{ 1,2,3,4,5 };
    std::vector<std::vector<int>> grid{ row, row, row, row, row };
    Grid test_grid{69, grid};
-   auto edges = test_grid.get_edges();
+   auto edges = test_grid.get_edges(Permutation::original);
    EXPECT_EQ(4, edges.size());
 
    std::vector<int> top_bottom{1, 2, 3, 4, 5};

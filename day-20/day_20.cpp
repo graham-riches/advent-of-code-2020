@@ -22,8 +22,11 @@
 #include "string_utilities.h"
 #include "grid.h"
 #include "combinations.h"
+#include "reconstruct_image.h"
 
 
+
+/********************************** Functions *******************************************/
 /**
  * @brief get a string containing each tiles data in a vector
  * @param filename filename to read data from
@@ -69,30 +72,41 @@ Grid<int> tile_string_to_grid( std::string& tile_string )
 
 
 /**
- * @brief count the number of possible edge matches between two grids
- * @param a 
- * @param b 
- * @return 
+ * @brief count the number of possible edge matches between two grids and return the edge that matches
+ * @param a grid A
+ * @param b grid B
+ * @return Note: two grids can match at most once
+ * @note there are only 8 permutations that two grids can match, and these can be found
+ *       by just comparing each edge vector to the other edge vector without rotating the
+ *       whole grid. In fact, using reverse iterators means that ZERO rotations and flips are 
+ *       required, which is super cool.
 */
-int check_all_matching_edges( Grid<int> a, Grid<int> b )
+Match check_all_matching_edges( Grid<int> a, Grid<int> b )
 {
-   auto a_edges = a.get_edges();
-   auto b_edges = b.get_edges();
-   int count{0};
-   for (auto& a_edge : a_edges)
-   {
-      for (auto& b_edge : b_edges)
+   auto a_edges = a.get_edges(Permutation::original);
+   auto b_edges = b.get_edges(Permutation::original);
+   Match match{a.get_id(), b.get_id()};
+
+   for ( int a_edge = Edges::top; a_edge < a_edges.size(); a_edge++ )
+   {      
+      for ( int b_edge = Edges::top; b_edge < b_edges.size(); b_edge++ )
       {
          /* check forward and reverse combinations */
-         auto forward_match = std::mismatch( a_edge.cbegin(), a_edge.cend(), b_edge.cbegin() );
-         auto reverse_match = std::mismatch( a_edge.cbegin(), a_edge.cend(), b_edge.crbegin() );
-         if ((forward_match.first == a_edge.cend()) || (reverse_match.first == a_edge.cend()))
+         auto forward_match = std::mismatch( a_edges[a_edge].cbegin(), a_edges[a_edge].cend(), b_edges[b_edge].cbegin() );
+         auto reverse_match = std::mismatch( a_edges[a_edge].cbegin(), a_edges[a_edge].cend(), b_edges[b_edge].crbegin() );
+         if ((forward_match.first == a_edges[a_edge].cend()) || (reverse_match.first == a_edges[a_edge].cend()))
          {
-            count++;
+            match.match = true;
+            match.a_edge = static_cast<Edges>(a_edge);
+            match.b_edge = static_cast<Edges>(b_edge);       
+            match.reverse = (reverse_match.first == a_edges[a_edge].cend());
+            goto exit_loops; /* Super Performance Hack: use a goto to break out of the double nesting to shorten cycles */
          }
-      }
+      }      
    }
-   return count;
+
+   exit_loops:
+   return match;
 }
 
 
@@ -119,13 +133,19 @@ int main( int64_t argc, char *argv[] )
    auto tile_pairs = get_pair_combinations(tiles);
 
    /* count matches between tile combinations and return only matched tiles */
-   std::vector<std::pair<Grid<int>, Grid<int>>> matches;
-   std::copy_if(tile_pairs.cbegin(), tile_pairs.cend(), std::back_inserter(matches),
+   std::vector<Match> matches(tile_pairs.size());
+   std::transform(tile_pairs.cbegin(), tile_pairs.cend(), matches.begin(),
       []( const auto pair )
       {
-         return static_cast<bool>( check_all_matching_edges( pair.first, pair.second ) );
+         auto match_container = check_all_matching_edges( pair.first, pair.second );
+         return match_container;
       }
    );
+
+   /* remove any non-matches */
+   matches.erase(std::remove_if(matches.begin(), matches.end(), [](auto match){ return ( match.match == false ); } ), matches.end());
+
+
 
    /* count the occurence of each tile in the matched set -> this determines it's possible locations
       2 matches - corner, 3 matches - edge, 4 matches - interior
@@ -135,10 +155,10 @@ int main( int64_t argc, char *argv[] )
 
    /* tally up the matches for each tile */
    std::for_each(matches.begin(), matches.end(), 
-      [&id_match_map](auto match_pair)
+      [&id_match_map](auto match)
       {
-         id_match_map[match_pair.first.get_id()]++;
-         id_match_map[match_pair.second.get_id()]++;         
+         id_match_map[match.id_a]++;
+         id_match_map[match.id_b]++;         
       }
    );
 
@@ -156,9 +176,12 @@ int main( int64_t argc, char *argv[] )
 
 
    /*------------------------------ Part Two Solution ------------------------------*/
-   /* need to assemble the puzzle from the corners out - this is going to be pretty damn rough to do*/
-
-
+   /* need to assemble the puzzle from the corners out - this is going to be pretty damn rough to do */
+   auto first_corner = std::find_if( id_match_map.cbegin(), id_match_map.cend(), [](auto match_pair){ return (match_pair.second == 2); } );
+   size_t dimension{static_cast<size_t>(sqrt(tile_data.size()))};
+   ConstructedImage image{ dimension, dimension, matches, id_match_map };
+   image.place_edges_and_corners( first_corner->first );
+   image.place_interior_pieces();
 
 
 
