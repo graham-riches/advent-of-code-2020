@@ -1,6 +1,7 @@
 set(BINARY day-20)
 
-set(SOURCES day_20.cpp)
+set(SOURCES day_20.cpp
+            grid.cpp)
 
 add_executable(${BINARY} ${SOURCES})
 

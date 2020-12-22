@@ -10,8 +10,6 @@
 
 #include <vector>
 
-
-
 /**
  * @brief get all pair combinations from a vector
  * @details this returns all possible permutations of two elements in the list excluding
@@ -21,19 +19,15 @@
  * @return vector of pairs
 */
 template <typename T>
-std::vector<std::pair<T, T>> get_pair_combinations( std::vector<T> elements )
-{
-   std::vector<std::pair<T, T>> pairs;
-   for (int i = 0; i < elements.size(); i++)
-   {
-      for (int j = i + 1; j < elements.size(); j++)
-      {
-         pairs.push_back( std::pair<T, T>{ elements[i], elements[j] } );
-      }
-   }
-   return pairs;
+std::vector<std::pair<T, T>> get_pair_combinations( std::vector<T> elements ) {
+    std::vector<std::pair<T, T>> pairs;
+    for ( int i = 0; i < elements.size( ); i++ ) {
+        for ( int j = i + 1; j < elements.size( ); j++ ) {
+            pairs.push_back( std::pair<T, T>{ elements[i], elements[j] } );
+        }
+    }
+    return pairs;
 }
-
 
 /**
  * @brief get all triplet combinations from a vector
@@ -44,18 +38,14 @@ std::vector<std::pair<T, T>> get_pair_combinations( std::vector<T> elements )
  * @return vector of pairs
 */
 template <typename T>
-std::vector<std::vector<T>> get_triplet_combinations( std::vector<T> elements )
-{
-   std::vector<std::vector<T>> triplets;
-   for (int i = 0; i < elements.size(); i++)
-   {
-      for (int j = i + 1; j < elements.size(); j++)
-      {
-         for (int k = j + 1; k < elements.size(); k++)
-         {
-            triplets.push_back( { elements[i], elements[j], elements[k] } );
-         }
-      }
-   }
-   return triplets;
+std::vector<std::vector<T>> get_triplet_combinations( std::vector<T> elements ) {
+    std::vector<std::vector<T>> triplets;
+    for ( int i = 0; i < elements.size( ); i++ ) {
+        for ( int j = i + 1; j < elements.size( ); j++ ) {
+            for ( int k = j + 1; k < elements.size( ); k++ ) {
+                triplets.push_back( { elements[i], elements[j], elements[k] } );
+            }
+        }
+    }
+    return triplets;
 }
