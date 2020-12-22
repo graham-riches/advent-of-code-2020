@@ -63,7 +63,7 @@ std::vector<std::vector<int>> Grid::get_edges( ) {
 }
 
 /**
- * @brief 
+ * @brief get all interior tiles of a grid (no borders)
  * @return 
 */
 std::vector<std::vector<int>> Grid::get_interior() {
@@ -72,6 +72,14 @@ std::vector<std::vector<int>> Grid::get_interior() {
         std::copy( tiles[i].begin( ) + 1, tiles[i].end( ) - 1, interior[i - 1LL].begin());
     }
     return interior;
+}
+
+/**
+ * @brief access the tile data for a grid object
+ * @return 
+*/
+std::vector<std::vector<int>> Grid::get_all_tiles() {
+    return tiles;
 }
 
 /**
@@ -106,7 +114,7 @@ void Grid::rotate( void ) {
     auto copy = tiles;
     for ( int i = 0; i < x_size; i++ ) {
         for ( int j = 0; j < y_size; j++ ) {
-            tiles[j][i] = copy[i][j];
+            tiles[j][i] = copy[i][x_size - 1 - j];
         }
     }
 }

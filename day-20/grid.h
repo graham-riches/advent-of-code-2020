@@ -27,6 +27,7 @@ class Grid {
     std::pair<size_t, size_t> get_dimensions( ) const;
     std::vector<std::vector<int>> get_edges( );
     std::vector<std::vector<int>> get_interior( );
+    std::vector<std::vector<int>> get_all_tiles( );
     void next_permutation( );    
 
   private:

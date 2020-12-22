@@ -98,6 +98,37 @@ Match check_all_matching_edges( Grid a, Grid b ) {
 
 
 /**
+ * @brief count the number of sea monsters in an image
+ * @param image the image to search
+ * @return count of sea monsters
+*/
+int count_sea_monsters( std::vector<std::vector<int>>& image ) {
+    /* hard code the sea monster kernel here */
+    std::vector<std::vector<int>> monster;
+    monster.push_back( {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0} );
+    monster.push_back( {1,0,0,0,0,1,1,0,0,0,0,1,1,0,0,0,0,1,1,1} );
+    monster.push_back( {0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,0} );
+    int monster_count{0};
+    auto count_monsters = [](int monster_value, int image_value) {
+        return (monster_value == 1 && image_value == 1);
+    };
+
+    for ( int row = 0; row <= image.size() - monster.size( ); row++ ) {
+        for ( int column = 0; column < image[0].size() - monster[0].size( ); column++ ) {
+            auto m1 = std::inner_product( monster[0].begin( ), monster[0].end( ), image[row].begin( ) + column, 0L, std::plus<int>(), count_monsters );
+            auto m2 = std::inner_product( monster[1].begin( ), monster[1].end( ), image[row + 1LL].begin( ) + column, 0L, std::plus<int>(), count_monsters );
+            auto m3 = std::inner_product( monster[2].begin( ), monster[2].end( ), image[row + 2LL].begin( ) + column, 0L, std::plus<int>(), count_monsters );
+            if ( (m1 == 1) && (m2 == 8) && (m3 == 6) ) {
+                monster_count++;
+            }
+        }
+    }
+    return monster_count;
+}
+
+
+
+/**
  * @brief main application entry point
 */
 int main( int64_t argc, char *argv[] ) {
@@ -148,6 +179,24 @@ int main( int64_t argc, char *argv[] ) {
     image.place_edges_and_corners( first_corner->first );
     image.place_interior_pieces( );
     auto result = image.assemble_final_image( tiles );
+
+    auto roughness_without_seamonsters = std::transform_reduce( result.begin( ), result.end( ), int64_t{ 0 }, std::plus<int64_t>( ), 
+        []( auto row ) { return std::count(row.begin(), row.end(), 1);} );
+
+    /* create a new grid object with the entire image */
+    Grid image_grid{0, result};    
+    
+    int monster_count{0};
+    for ( int i = 0; i < 8; i++ ) {
+        auto temp_image = image_grid.get_all_tiles( );        
+        auto count = count_sea_monsters( temp_image );
+        if ( count > 0 ) {
+            monster_count += count;
+        }
+        image_grid.next_permutation( );
+    }
+
+    std::cout << "Water roughness: " << roughness_without_seamonsters - monster_count * 15LL << "\n";
 
     /* print out the total run time */
     auto end = std::chrono::steady_clock::now( );

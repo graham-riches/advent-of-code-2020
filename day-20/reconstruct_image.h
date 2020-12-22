@@ -266,6 +266,7 @@ class ConstructedImage {
     * @param locations locations of each tile in the grid
     * @param tiles raw tile data
     * @return
+    * @note this is some of the worst spaghetti code ever. I hate myself for writing this :P
    */
     std::vector<std::vector<int>> assemble_final_image( std::vector<Grid> &tiles ) {
         /* copy each grid over to its final location */
@@ -278,29 +279,85 @@ class ConstructedImage {
             }
         }
 
-        /* rotate all tiles to their correct location */
-        for ( int row = 0; row < x_size; row++ ) {
-            for ( int column = 0; column < y_size - 1; column++ ) {
-                bool done = false;
-                for ( int i = 0; i < 7; i++ ) {
-                    for ( int j = 0; j < 7; j++ ) {
-                        auto parent_edges = grid[row][column].get_edges( );
-                        auto child_edges = grid[row][column + 1LL].get_edges( );
-                        auto match = std::mismatch( parent_edges[Edges::right].begin( ), parent_edges[Edges::right].end( ), child_edges[Edges::left].begin( ) );
-                        if ( match.first == parent_edges[Edges::right].end( ) ) {
-                            done = true;
-                            break;
-                        }
-                        grid[row][column + 1LL].next_permutation( );
-                    }
-                    if ( done )
-                        break;
+        /* set the first tile in place */
+        for ( int i = 0; i < 8; i++ ) {
+            grid[0][0].next_permutation();
+            for ( int j = 0; j < 8; j++ ) {
+                grid[0][1].next_permutation( );
+                for ( int k = 0; k < 8; k++ ) {
+                    grid[1][0].next_permutation();
+                    for ( int l = 0; l < 8; l++ ) {
+                        grid[0][2].next_permutation( );
+                        auto parent_edges = grid[0][1].get_edges( );
+                        auto right_neighbour = grid[0][2].get_edges( );
+                        auto left_neighbour = grid[0][0].get_edges( );
+                        auto vertical_neighbour_edges = grid[1][0].get_edges( );
 
-                    grid[row][column + 1LL].next_permutation( );
-                    grid[row][column].next_permutation( );
+                        auto match_right =
+                            std::mismatch( parent_edges[Edges::right].begin( ), parent_edges[Edges::right].end( ), right_neighbour[Edges::left].begin( ) );
+                        auto match_left =
+                            std::mismatch( parent_edges[Edges::left].begin( ), parent_edges[Edges::left].end( ), left_neighbour[Edges::right].begin( ) );
+                        auto match_vertical = std::mismatch(
+                            left_neighbour[Edges::bottom].begin( ), left_neighbour[Edges::bottom].end( ), vertical_neighbour_edges[Edges::top].begin( ) );
+
+                        /* check for a tile match */
+                        if ( ( match_left.first == parent_edges[Edges::left].end( ) ) && ( match_right.first == parent_edges[Edges::right].end( ) ) &&
+                             ( match_vertical.first == left_neighbour[Edges::bottom].end( ) ) ) {
+                            goto first_tile_set;
+                        }             
+                    }
                 }
             }
         }
+        first_tile_set:
+
+
+
+        /* rotate all tiles to their correct location */
+        for ( int row = 0; row < x_size - 1; row++ ) {
+            for ( int column = 0; column < y_size - 1; column++ ) {                
+                for ( int j = 0; j < 8; j++ ) {                                                                   
+                    for ( int k = 0; k < 8; k++ ) {                                                
+                        auto parent_edges = grid[row][column].get_edges( );
+                        auto right_neighbour = grid[row][column + 1LL].get_edges( );
+                        auto vertical_neighbour_edges = grid[row + 1LL][column].get_edges( );
+
+                        auto match_right = std::mismatch(
+                            parent_edges[Edges::right].begin( ), parent_edges[Edges::right].end( ), right_neighbour[Edges::left].begin( ) );
+                        auto match_vertical = std::mismatch(
+                            parent_edges[Edges::bottom].begin( ), parent_edges[Edges::bottom].end( ), vertical_neighbour_edges[Edges::top].begin( ) );
+
+                        /* check for a tile match */
+                        if ( (match_right.first == parent_edges[Edges::right].end( ) ) &&
+                             (match_vertical.first == parent_edges[Edges::bottom].end( ))) {
+                            goto next_tile;
+                        }
+                        grid[row + 1LL][column].next_permutation( );  //!< get the next permutation of the tile below
+                    }
+                    grid[row][column + 1LL].next_permutation( );  //!< get the next permutation of the tile beside
+                }
+                next_tile:
+                    auto temp{1};
+            }
+        }
+
+        /* set the last piece into place */
+        for ( int i = 0; i < 8; i++ ) {
+            grid[x_size - 1LL][y_size - 1LL].next_permutation( );
+            auto parent_edges = grid[x_size - 1LL][y_size - 1LL].get_edges( );
+            auto horizontal_neighbour_edges = grid[x_size - 1LL][y_size - 2LL].get_edges( );
+            auto vertical_neighbour_edges = grid[x_size - 2LL][y_size - 1LL].get_edges( );
+
+            auto match_horizontal =
+                std::mismatch( parent_edges[Edges::left].begin( ), parent_edges[Edges::left].end( ), horizontal_neighbour_edges[Edges::right].begin( ) );
+            auto match_vertical =
+                std::mismatch( parent_edges[Edges::top].begin( ), parent_edges[Edges::top].end( ), vertical_neighbour_edges[Edges::bottom].begin( ) );
+
+            if ( ( match_horizontal.first == parent_edges[Edges::left].end( ) ) && ( match_vertical.first == parent_edges[Edges::top].end( ) ) ) {
+                break;
+            } 
+        }
+
 
         /* trim the edges of each image: my god this is disgusting */
         auto dim = grid[0][0].get_dimensions( );
