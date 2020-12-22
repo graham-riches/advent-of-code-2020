@@ -48,26 +48,29 @@ def recursive_combat(p1: list, p2: list) -> tuple:
     game_hands = dict()
     iteration = 0
     while len(p1) != 0 and len(p2) != 0:
-        p1_start = p1
-        p2_start = p2
-        if zip(p1, p2) in game_hands.values():
-            # infinite recursion break
-            break
+        p1_start = p1[:]
+        p2_start = p2[:]
+        for key, value in game_hands.items():
+            if value[0] == p1_start and value[1] == p2_start:
+                return [1], []
         else:
             cards = [p1.pop(0), p2.pop(0)]
             # game recursion condition
             if len(p1) >= cards[0] and len(p2) >= cards[1]:
                 r1, r2 = recursive_combat(p1[0:cards[0]], p2[0:cards[1]])
-                if len(r1) > len(r2):
+                # check for duplicate returns
+                if r1 == [1] and r2 == []:
+                    p1.extend(cards)
+                elif len(r1) > len(r2):
                     p1.extend(cards)
                 else:
-                    p2.extend(sorted(cards))
-
+                    cards.reverse()
+                    p2.extend(cards)
             elif cards[0] > cards[1]:
                 p1.extend(cards)
             else:
                 p2.extend(sorted(cards, reverse=True))
-        game_hands[iteration] = [list(zip(p1_start, p2_start))]
+        game_hands[iteration] = [p1_start, p2_start]
         iteration += 1
     return p1, p2
 
@@ -87,4 +90,7 @@ if __name__ == '__main__':
     print('Winning Score: {}'.format(score))
 
     # Part Two
-    p1, p2 = recursive_combat(*load_player_hands('sample.txt'))
+    p1, p2 = recursive_combat(*load_player_hands('input.txt'))
+    winner = p1 if len(p1) > len(p2) else p2
+    score = calculate_score(winner)
+    print('Winning Score: {}'.format(score))
